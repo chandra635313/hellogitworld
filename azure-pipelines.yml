@@ -1,0 +1,55 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+
+# 1. Checkout code
+- task: Checkout@1
+  inputs:
+    clean: true
+
+# 2. Install Maven
+- task: Maven@3
+  inputs:
+    mavenPomFile: 'pom.xml'
+    goals: 'clean package'
+    publishJUnitResults: false
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: '1.11'
+    mavenOptions: '-Xmx3072m'
+
+# 3. Build Docker Image
+- task: Bash@3
+  displayName: 'Build Docker Image'
+  inputs:
+    targetType: 'inline'
+    script: |
+      docker build -t mytomcatapp:latest .
+
+# (Optional) Push to ACR (If you want)
+# Uncomment if needed
+#
+# - task: Docker@2
+#   inputs:
+#     containerRegistry: 'ACR-Service-Connection'
+#     repository: 'mytomcatapp'
+#     command: 'push'
+#     tags: 'latest'
+
+# 4. Run docker container (for verification)
+- task: Bash@3
+  displayName: 'Run Docker Container'
+  inputs:
+    targetType: 'inline'
+    script: |
+      docker run -d -p 8080:8080 --name tomcat-app mytomcatapp:latest
+      echo "App is running on port 8080"
+
